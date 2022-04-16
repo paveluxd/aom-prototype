@@ -321,9 +321,8 @@
         var hitDelay = 500
 
         function dmgEnemy(fireball, enemy){
-    
+            //Timeout for 500ms after hit
             if (hitLastRun > (Date.now() - hitDelay))
-            //Timer
             return;
             hitLastRun = Date.now();
 
@@ -331,14 +330,22 @@
             var weaponDmg = playerStats.weapons.fireball.damage
             console.log(enemy.customHp)
 
+            //Enemy dead
             if(enemyHp <= weaponDmg){
+                dropExp(enemy)
                 enemy.destroy()
             }
+            //Enemy hit
             else {
                 enemy.customHp -= weaponDmg
                 enemy.setTint(0xff0000);
                 console.log(enemy.customHp)
             }
+        }
+
+        //Drop exp function
+        dropExp(enemy){
+            //Enemy
         }
     </script>
 
