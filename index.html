@@ -141,7 +141,7 @@
                             playerStats.weapons.fireball.direction = 2
                         })
                     }
-                    else if(playerStats.weapons.fireball.direction === 2 && playerStats.points > 3){
+                    else if(playerStats.weapons.fireball.direction === 2){
                         fireball.children.entries.forEach(function (fireball){                 
                             fireball.x = player.x
                             fireball.y = player.y  
@@ -152,7 +152,7 @@
                             playerStats.weapons.fireball.direction = 3
                         })
                     }
-                    else if(playerStats.weapons.fireball.direction === 3  && playerStats.points > 6){
+                    else if(playerStats.weapons.fireball.direction === 3){
                         fireball.children.entries.forEach(function (fireball){                 
                             fireball.x = player.x
                             fireball.y = player.y  
@@ -164,7 +164,7 @@
                             playerStats.weapons.fireball.direction = 4
                         })
                     }
-                    else if (playerStats.weapons.fireball.direction === 4 && playerStats.points > 9) {
+                    else if (playerStats.weapons.fireball.direction === 4) {
                         fireball.children.entries.forEach(function (fireball){                 
                             fireball.x = player.x
                             fireball.y = player.y  
@@ -177,7 +177,7 @@
                         })
                     }
                 }
-            }, 1000);
+            }, 2000);
             
             //Keyboard keys
             cursors = this.input.keyboard.createCursorKeys()
