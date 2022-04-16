@@ -316,9 +316,9 @@
         }
 
         
-        //Enemy damage
+        //ENEMY DAMAGE
         var hitLastRun = 0
-        var hitDelay = 750
+        var hitDelay = 500
 
         function dmgEnemy(fireball, enemy){
     
@@ -329,13 +329,14 @@
 
             var enemyHp = enemy.customHp
             var weaponDmg = playerStats.weapons.fireball.damage
-            // console.log(enemy.customHp)
+            console.log(enemy.customHp)
 
             if(enemyHp <= weaponDmg){
                 enemy.destroy()
             }
             else {
                 enemy.customHp -= weaponDmg
+                enemy.setTint(0xff0000);
                 console.log(enemy.customHp)
             }
         }
