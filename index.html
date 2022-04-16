@@ -35,12 +35,24 @@
         };
     
         var game = new Phaser.Game(config)
-        var player, cursors, enemy
+        var player, cursors, enemy, fireball //***
 
         //Player stats
         var playerStats = {
             life: 10,
             points: 0,
+            experiece: 0,
+            weapons:{
+                fireball: {
+                    equiped: true,
+                    direction: 1, 
+                    damage: 5,
+                }
+            }
+        }
+
+        var enemyGroup = {
+            speed: 40
         }
 
     //PRELOAD
@@ -53,6 +65,9 @@
 
             //Misc
             this.load.image('map', './img/map.png')
+
+            //***P new
+            this.load.image('fireball', './img/fireball.png')
         }
     
     //CREATE
@@ -64,33 +79,133 @@
             //Background image
             this.add.image(375, 812, 'map')
 
-            //Player srite
+            //Player sprite
             player = this.physics.add.sprite(screenCenterX, screenCenterY, 'player')
             player.setCollideWorldBounds(true);
-            console.log(player)
+            // console.log(player)
 
-            //Enemy sprites
+            //Enemy sprite
             enemy = this.physics.add.group({
-                key: 'enemy-1',
-                repeat: 3,
-                setXY: { x: 24, y: 24, stepX: 80, stepY: 12 },
-                bounce: 1
-            })
+                
+            });
+            
 
+            setInterval(function()
+            {
+                let screenX = config.width
+                let screenY = config.height
+                let unitSize = 80
+
+                if(Math.floor(Math.random()* 10) > 5){
+                    enemy.create(
+                        (Phaser.Math.Between(-180,-1000)),
+                        (Phaser.Math.Between(1000,3000)), //y
+                        'enemy-1'
+                    )
+                }
+                else {
+                    enemy.create(
+                        (Phaser.Math.Between(3000,-180)),
+                        (Phaser.Math.Between(-180,-180)), //y
+                        'enemy-1'
+                    )
+                }
+
+                var lastEnemy = enemy.children.entries[enemy.children.entries.length - 1]
+                lastEnemy.customHp = Math.floor(Math.random() * 10)
+                lastEnemy.customHp = 10
+                // console.log(lastEnemy.customHp)
+
+            }, 2000)
+
+            this.physics.add.collider(enemy, enemy);
             console.log(enemy)
 
+            //***
+            //Projectiles
+            //Fireball
+            fireball = this.physics.add.group({
+                key: 'fireball',
+                repeat: 0,
+                setXY: {x:24, y:24}
+            })
+            
+            setInterval(function(){
+                
+                if(playerStats.weapons.fireball.equiped === true){
+                    
+                    if(playerStats.weapons.fireball.direction === 1){
+                        fireball.children.entries.forEach(function (fireball){                 
+                            fireball.x = player.x
+                            fireball.y = player.y  
+                            fireball.angle = 90
+
+                            fireball.setVelocityY(-250)
+                            fireball.setVelocityX(0)
+
+                            playerStats.weapons.fireball.direction = 2
+                        })
+                    }
+                    else if(playerStats.weapons.fireball.direction === 2 && playerStats.points > 3){
+                        fireball.children.entries.forEach(function (fireball){                 
+                            fireball.x = player.x
+                            fireball.y = player.y  
+                            fireball.angle = 180
+                            fireball.setVelocityY(0)
+                            fireball.setVelocityX(250)
+
+                            playerStats.weapons.fireball.direction = 3
+                        })
+                    }
+                    else if(playerStats.weapons.fireball.direction === 3  && playerStats.points > 6){
+                        fireball.children.entries.forEach(function (fireball){                 
+                            fireball.x = player.x
+                            fireball.y = player.y  
+                            fireball.angle = 270
+                            
+                            fireball.setVelocityY(250)
+                            fireball.setVelocityX(0)
+
+                            playerStats.weapons.fireball.direction = 4
+                        })
+                    }
+                    else if (playerStats.weapons.fireball.direction === 4 && playerStats.points > 9) {
+                        fireball.children.entries.forEach(function (fireball){                 
+                            fireball.x = player.x
+                            fireball.y = player.y  
+                            fireball.angle = 0
+
+                            fireball.setVelocityY(0)
+                            fireball.setVelocityX(-250)
+
+                            playerStats.weapons.fireball.direction = 1
+                        })
+                    }
+                }
+            }, 1000);
+            
             //Keyboard keys
             cursors = this.input.keyboard.createCursorKeys()
 
             //Colliders
-            this.physics.add.overlap(player, enemy, dmgPlayer, null, this);
+            this.physics.add.overlap(player, enemy, dmgPlayer, null, this);  //Player vs enemy
+            this.physics.add.overlap(fireball, enemy, dmgEnemy, null, this); //Fireball vs enemy
+
+            //***
+            //Points calculation function
+            var timeText = document.getElementById('time')
+            timeText.innerHTML = "0 point"
+
+            setInterval(function(){
+                //Update timer
+                playerStats.points++
+                timeText.innerHTML = playerStats.points + " points"
+            }, 1000);
         }
         
     //UPDATE
         function update (){
-            //Points calculation function
-            updateTime()
-
+            
             //Player movement wihth keyboard
             if (cursors.left.isDown) {
                 // player.x -= 3
@@ -144,43 +259,33 @@
             //Enemy movement
             enemy.children.entries.forEach(function(element){
 
-                if (player.x > element.x){
-                    element.x++
+                if (player.x - 25 > element.x){
+                    element.setVelocityX(enemyGroup.speed)
                 }
-                else if (player.x < element.x){
-                    element.x--
+                else if (player.x + 25 < element.x){
+                    element.setVelocityX(-Math.abs(enemyGroup.speed))
+                }
+                else{
+                    element.setVelocityX(0)
                 }
     
-                if (player.y > element.y){
-                    element.y++
+                if (player.y - 25 > element.y){
+                    element.setVelocityY(enemyGroup.speed)
                 }
-                else if (player.y < element.y){
-                    element.y--
+                else if (player.y + 25 < element.y){
+                    element.setVelocityY(-Math.abs(enemyGroup.speed))
+                }
+                else {
+                    element.setVelocityY(0)
                 }
             })
         }
     
     //GAME LOGIC
-        //Show score
-        var TimelastRun = 0
-        var TimeDelay = 1000
-        var timeText = document.getElementById('time')
-        timeText.innerHTML = "0 point"
-
-        function updateTime(){
-            if (TimelastRun > (Date.now() - TimeDelay))
-                //Timer
-                return;
-                TimelastRun = Date.now();
-
-                //Update timer
-                playerStats.points++
-                timeText.innerHTML = playerStats.points + " points"
-        }
-
         //Player damage
         var lastRun = 0
         var delay = 500
+
         var lifeText = document.getElementById('life')
         lifeText.innerHTML = playerStats.life //Set life value to obj value
 
@@ -214,6 +319,31 @@
 
                 //Reset player to white after delay
                 setTimeout(function(){ player.tint = 0xffffff; }, 100);
+        }
+
+        
+        //Enemy damage
+        var hitLastRun = 0
+        var hitDelay = 750
+
+        function dmgEnemy(fireball, enemy){
+    
+            if (hitLastRun > (Date.now() - hitDelay))
+            //Timer
+            return;
+            hitLastRun = Date.now();
+
+            var enemyHp = enemy.customHp
+            var weaponDmg = playerStats.weapons.fireball.damage
+            // console.log(enemy.customHp)
+
+            if(enemyHp <= weaponDmg){
+                enemy.destroy()
+            }
+            else {
+                enemy.customHp -= weaponDmg
+                console.log(enemy.customHp)
+            }
         }
     </script>
 
