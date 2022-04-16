@@ -35,7 +35,7 @@
         };
     
         var game = new Phaser.Game(config)
-        var player, cursors, enemy, fireball //***
+        var player, cursors, enemy, fireball
 
         //Player stats
         var playerStats = {
@@ -66,7 +66,6 @@
             //Misc
             this.load.image('map', './img/map.png')
 
-            //***P new
             this.load.image('fireball', './img/fireball.png')
         }
     
@@ -85,11 +84,8 @@
             // console.log(player)
 
             //Enemy sprite
-            enemy = this.physics.add.group({
-                
-            });
+            enemy = this.physics.add.group();
             
-
             setInterval(function()
             {
                 let screenX = config.width
@@ -121,7 +117,6 @@
             this.physics.add.collider(enemy, enemy);
             console.log(enemy)
 
-            //***
             //Projectiles
             //Fireball
             fireball = this.physics.add.group({
@@ -191,7 +186,6 @@
             this.physics.add.overlap(player, enemy, dmgPlayer, null, this);  //Player vs enemy
             this.physics.add.overlap(fireball, enemy, dmgEnemy, null, this); //Fireball vs enemy
 
-            //***
             //Points calculation function
             var timeText = document.getElementById('time')
             timeText.innerHTML = "0 point"
