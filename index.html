@@ -8,8 +8,14 @@
     <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
 </head>
 <body>
+    <div id="stats">
+        <p id="life"></p>
+        <p id="time"></p>
+    </div>
+
     <!-- Game code -->
     <script>
+    //CONFIGURATION & VARIABLES
         var config = {
             type: Phaser.AUTO,
             width: 640,
@@ -31,7 +37,13 @@
         var game = new Phaser.Game(config)
         var player, cursors, enemy
 
-        //Preload
+        //Player stats
+        var playerStats = {
+            life: 10,
+            points: 0,
+        }
+
+    //PRELOAD
         function preload (){
             //Player
             this.load.image('player', './img/player.png')
@@ -43,7 +55,7 @@
             this.load.image('map', './img/map.png')
         }
     
-        //Creates element
+    //CREATE
         function create (){
             //Variables for screen centre
             const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
@@ -65,19 +77,19 @@
                 bounce: 1
             })
 
-            enemy.children.forEach( function(elem){
-                elem.setBounce(1)
-            })
-
             console.log(enemy)
 
             //Keyboard keys
             cursors = this.input.keyboard.createCursorKeys()
+
+            //Colliders
+            this.physics.add.overlap(player, enemy, dmgPlayer, null, this);
         }
         
-        //Updated elemen
+    //UPDATE
         function update (){
-            // console.log(player.body.velocity.x)
+            //Points calculation function
+            updateTime()
 
             //Player movement wihth keyboard
             if (cursors.left.isDown) {
@@ -147,6 +159,62 @@
                 }
             })
         }
+    
+    //GAME LOGIC
+        //Show score
+        var TimelastRun = 0
+        var TimeDelay = 1000
+        var timeText = document.getElementById('time')
+        timeText.innerHTML = "0 point"
+
+        function updateTime(){
+            if (TimelastRun > (Date.now() - TimeDelay))
+                //Timer
+                return;
+                TimelastRun = Date.now();
+
+                //Update timer
+                playerStats.points++
+                timeText.innerHTML = playerStats.points + " points"
+        }
+
+        //Player damage
+        var lastRun = 0
+        var delay = 500
+        var lifeText = document.getElementById('life')
+        lifeText.innerHTML = playerStats.life //Set life value to obj value
+
+        function dmgPlayer(player, enemy){
+            
+            //Prevent function from executing more than N times per sec.
+            if (lastRun > (Date.now() - delay))
+                //Timer
+                return;
+                lastRun = Date.now();
+                
+                //Reduce live
+                playerStats.life--
+
+                //Check if player is dead
+                if(playerStats.life < 1){
+
+                    //Reset player object
+                    playerStats.life = 10
+                    playerStats.points = 0
+
+                    //Restart the game
+                    this.scene.restart();
+                }
+
+                //Update html life label
+                lifeText.innerHTML = playerStats.life
+
+                //Change player colour to black on overlap
+                player.tint = 0x121212
+
+                //Reset player to white after delay
+                setTimeout(function(){ player.tint = 0xffffff; }, 100);
+        }
     </script>
 
     <!-- Styles that center the canvas and set scaling ot 0.5 -->
@@ -156,7 +224,20 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            padding: 0;
+            margin: 0;
         }
+
+        #stats{
+            position: fixed;
+            top: 24px;
+            left: 24px;
+        }
+
+        p{
+            margin: 0;
+        }
+
         canvas{
             transform: scale(0.5);
         }
