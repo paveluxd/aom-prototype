@@ -11,6 +11,7 @@
     <div id="stats">
         <p id="life"></p>
         <p id="time"></p>
+        <p id="exp"></p>
     </div>
 
     <!-- Game code -->
@@ -35,7 +36,7 @@
         };
     
         var game = new Phaser.Game(config)
-        var player, cursors, enemy, fireball
+        var player, cursors, enemy, fireball, expNode
 
         //Player stats
         var playerStats = {
@@ -70,8 +71,8 @@
         
             //Misc
             this.load.image('map', './img/map.png')
-
             this.load.image('fireball', './img/fireball.png')
+            this.load.image('exp-node', './img/exp-node.png')
         }
     
     //CREATE
@@ -117,6 +118,19 @@
                 lastEnemy.customHp = 10
                 lastEnemy.lastHitTime = Date.now()
             }, 2000)
+
+
+            //Drop exp node sprite
+            var expText = document.getElementById('exp')
+            expText.innerHTML = playerStats.experiece
+
+            expNode = this.physics.add.group()
+            this.physics.add.overlap(player, expNode, collectExp, null, this);
+            function collectExp (player, expNode){
+                playerStats.experiece += 1
+                expText.innerHTML = playerStats.experiece
+                expNode.destroy()
+            }
 
             //Projectiles
             //Fireball
@@ -350,7 +364,7 @@
 
         //Drop exp function
         function dropExp(enemy){
-
+            expNode.create(enemy.x, enemy.y, 'exp-node')
         }
     </script>
 
