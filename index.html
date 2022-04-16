@@ -29,7 +29,7 @@
         };
     
         var game = new Phaser.Game(config)
-        var player, cursors
+        var player, cursors, enemy
 
         //Preload
         function preload (){
@@ -54,9 +54,22 @@
 
             //Player srite
             player = this.physics.add.sprite(screenCenterX, screenCenterY, 'player')
+            player.setCollideWorldBounds(true);
+            console.log(player)
 
             //Enemy sprites
-            enemy = this.physics.add.sprite(100, 100, 'enemy-1')
+            enemy = this.physics.add.group({
+                key: 'enemy-1',
+                repeat: 3,
+                setXY: { x: 24, y: 24, stepX: 80, stepY: 12 },
+                bounce: 1
+            })
+
+            enemy.children.forEach( function(elem){
+                elem.setBounce(1)
+            })
+
+            console.log(enemy)
 
             //Keyboard keys
             cursors = this.input.keyboard.createCursorKeys()
@@ -64,25 +77,75 @@
         
         //Updated elemen
         function update (){
+            // console.log(player.body.velocity.x)
 
             //Player movement wihth keyboard
             if (cursors.left.isDown) {
+                // player.x -= 3
                 player.setVelocityX(-160)
+
+                //Turn drift
+                if(player.body.velocity.y > 0){
+                    player.setVelocityY(player.body.velocity.y - 5)
+                }
+                else if (player.body.velocity.y < 0) {
+                    player.setVelocityY(player.body.velocity.y + 5)
+                }
+
             }
             else if (cursors.right.isDown) {
                 player.setVelocityX(160)
+
+                //Turn drift
+                if(player.body.velocity.y > 0){
+                    player.setVelocityY(player.body.velocity.y - 5)
+                }
+                else if (player.body.velocity.y < 0) {
+                    player.setVelocityY(player.body.velocity.y + 5)
+                }
             }
             else if (cursors.up.isDown) {
                 player.setVelocityY(-160)
+
+                if(player.body.velocity.x > 0){
+                    player.setVelocityX(player.body.velocity.x - 5)
+                }
+                else if (player.body.velocity.x < 0) {
+                    player.setVelocityX(player.body.velocity.x + 5)
+                }
             }
             else if (cursors.down.isDown) {
                 player.setVelocityY(160)
+
+                if(player.body.velocity.x > 0){
+                    player.setVelocityX(player.body.velocity.x - 5)
+                } 
+                else if (player.body.velocity.x < 0) {
+                    player.setVelocityX(player.body.velocity.x + 5)
+                }
             }
             else {
                 player.setVelocityX(0)
                 player.setVelocityY(0)
             }
 
+            //Enemy movement
+            enemy.children.entries.forEach(function(element){
+
+                if (player.x > element.x){
+                    element.x++
+                }
+                else if (player.x < element.x){
+                    element.x--
+                }
+    
+                if (player.y > element.y){
+                    element.y++
+                }
+                else if (player.y < element.y){
+                    element.y--
+                }
+            })
         }
     </script>
 
