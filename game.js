@@ -450,6 +450,8 @@
         //Reard 1
         if(button.getAttribute('data-type') === 'reward1'){
             console.log(1)
+            //Add life
+            playerStats.life += playerStats.level
         }
         // Reward 2
         else if (button.getAttribute('data-type') === 'reward2'){
@@ -458,6 +460,9 @@
         // Reward 2
         else if (button.getAttribute('data-type') === 'reward3'){
             console.log(3)
+        } 
+        else {
+            console.log('No reward found.')
         }
 
         resumeScene()
