@@ -16,14 +16,15 @@
             <p id="time"></p>
             <p id="exp"></p>
             <p id="level"></p>
+            <p id="nextlvl"></p>
         </div>
 
-        <div id="modal">
+        <div id="modal" class="hide">
             <div class="container">
                 <h1>Level up!</h1>
-                <button onclick="hide()">Reward</button>
-                <button onclick="hide()">Reward</button>
-                <button onclick="hide()">Reward</button>
+                <button onclick="hide(), resumeScene()">Reward</button>
+                <button onclick="hide(), resumeScene()">Reward</button>
+                <button onclick="hide(), resumeScene()">Reward</button>
             </div>
         </div>
     </body>
