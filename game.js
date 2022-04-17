@@ -7,7 +7,7 @@
             default: 'arcade',
             arcade: {
                 gravity: { y: 0 },
-                debug: true,
+                debug: false,
             }
         },
         scene: {
@@ -26,13 +26,13 @@
         speed: 200,
         points: 0,
         experiece: 0,
-        requiredExp: 1,
+        requiredExp: 5,
         level: 1,
         weapons:{
             fireball: {
                 equiped: true,
                 direction: 'top', 
-                damage: 11,
+                damage: 5,
                 castSpeed: 2000,
                 projSpeed: 360,
                 dpsTimeout: 500, //how frequently projectile deals damage
@@ -40,7 +40,7 @@
                 lastCastTime: Date.now()
             },
             spike: {
-                equiped: true,
+                equiped: false,
                 damage: 7,
                 castSpeed: 5000,
                 projSpeed: 0,
@@ -49,7 +49,7 @@
                 lastCastTime: Date.now()
             },
             staff: {
-                equiped: true,
+                equiped: false,
                 direction: 'left', 
                 damage: 10,
                 castSpeed: 1500,
@@ -61,20 +61,40 @@
         }
     }
 
-    var rewards = {
-        reward1: {
-            description: 'Add life'
-        },
-        reward2: {
-            description: 'Add speed'
-        },
-        reward3: {
-            description: 'Add damage'
-        },
+    //Enemy stats
+    var enemyStats = {
+        spawnRate: 2000,
+        life: 5,
+        lifeScaleFactor: 30, //Enemy will get 1 hp per 10 player points
+        speed: 60,
+        speedScaleFactor: 0.5,
+        walkDirectionCanged: Date.now(),
+        walkDelay: 2000,
     }
 
-    var enemyGroup = {
-        speed: 80
+    //Rewards
+    var rewards = {
+        life: {
+            description: 'Add Health + 10'
+        },
+        speed: {
+            description: 'Add speed + 1'
+        },
+        fireballDamage: {
+            description: 'Add Fireball damage + 5'
+        },
+        fireballPenetration: {
+            description: 'Fireball Penetrates targets'
+        },
+        fireballCastSpeed: {
+            description: 'Reduce Fireball Cooldown'
+        },
+        spike: {
+            description: "Weapon: Spike"
+        },
+        staff: {
+            description: "Weapon: staff"
+        } 
     }
 
 
@@ -84,10 +104,16 @@
         this.load.image('player', './img/player.png')
         this.load.image('player-hit', './img/player-hit.png')
         this.load.spritesheet('player-walk', './img/player-walk.png', { frameWidth: 52, frameHeight: 68 });
+        this.load.spritesheet('player-idle', './img/player-idle.png', { frameWidth: 52, frameHeight: 68 });
+
 
         //Enemy
         this.load.image('enemy-1', './img/enemy-1.png')
         this.load.image('enemy-1-hit', './img/enemy-1-hit.png');
+        this.load.spritesheet('enemy-walk', './img/enemy-walk.png', { frameWidth: 48, frameHeight: 72 });
+        this.load.spritesheet('enemy-hit-walk', './img/enemy-hit-walk.png', { frameWidth: 48, frameHeight: 72 });
+
+
     
         //Misc
         this.load.image('map', './img/map.png')
@@ -101,61 +127,105 @@
 
 //CREATE
     function create (){
-        // this.scene.pause()
         scene = this.scene
+        const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2; //Variables for screen centre
+        const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2; //Variables for screen centre
+        cursors = this.input.keyboard.createCursorKeys() //Keyboard keys
 
-        //Variables for screen centre
-        const screenCenterX = this.cameras.main.worldView.x + this.cameras.main.width / 2;
-        const screenCenterY = this.cameras.main.worldView.y + this.cameras.main.height / 2;
-
-        //Background image
+    //MAP
         this.add.image(375, 812, 'map')
 
-        //Player sprite
+    //PLAYER
         player = this.physics.add.sprite(screenCenterX, screenCenterY, 'player')
         player.setCollideWorldBounds(true);
 
-        this.anims.create({
-            key: 'walk',
-            frames: this.anims.generateFrameNumbers('player-walk', { start: 0, end: 1 }),
-            frameRate: 2,
-            repeat: -1
-        });
+        //Anims
+            this.anims.create({
+                key: 'player-idle',
+                frames: this.anims.generateFrameNumbers('player-idle', { start: 0, end: 3 }),
+                frameRate: 6,
+                repeat: -1
+            })//Idle
+            
+            this.anims.create({
+                key: 'walk',
+                frames: this.anims.generateFrameNumbers('player-walk', { start: 0, end: 1 }),
+                frameRate: 4,
+                repeat: -1
+            })//Walk
 
-        player.anims.play('walk', true);
+        player.anims.play('player-idle', true);
 
 
-        //Enemy sprite
+    //ENEMY
         enemy = this.physics.add.group();
-        setInterval(function()
-        {
-            if(Math.floor(Math.random()* 10) > 5){
+
+        //Anims
+            this.anims.create({
+                key: 'enemy-walk',
+                frames: this.anims.generateFrameNumbers('enemy-walk', { start: 0, end: 5 }),
+                frameRate: 8,
+                repeat: -1
+            })//Walk
+            
+            this.anims.create({
+                key: 'enemy-hit-walk',
+                frames: this.anims.generateFrameNumbers('enemy-hit-walk', { start: 0, end: 1 }),
+                frameRate: 4,
+                repeat: -1
+            })//Hit walk
+        
+        //Spawn enemies
+        setInterval(function(){
+            var value = rNum(4)
+
+            if(value === 0){
                 enemy.create(
-                    (Phaser.Math.Between(-80,-600)),
-                    (Phaser.Math.Between(1000,600)), //y
+                    -80,          //x
+                    rNum(1200), //y
+                    'enemy-1'
+                )
+            }
+            else if (value === 1){
+                enemy.create(
+                    720,        //x
+                    rNum(120), //y
+                    'enemy-1'
+                )
+            }
+            else if (value === 2) {
+                enemy.create(
+                    rNum(620),
+                    1280, 
                     'enemy-1'
                 )
             }
             else {
                 enemy.create(
-                    (Phaser.Math.Between(600,-80)),
-                    (Phaser.Math.Between(-80,-80)), //y
+                    rNum(620),
+                    -80, 
                     'enemy-1'
                 )
             }
 
             //Add custom properties to calculate dmg
             var lastEnemy = enemy.children.entries[enemy.children.entries.length - 1]
-            lastEnemy.customHp = Math.floor(Math.random() * 10)
-            lastEnemy.customHp = 10
+            //Set life
+            lastEnemy.customHp = enemyStats.life + Math.round(playerStats.points / enemyStats.lifeScaleFactor)
+            //Last hit timer
             lastEnemy.lastHitTime = Date.now()
-        }, 100)
+            lastEnemy.directionChange = Date.now()
+            //Run animation
+            lastEnemy.anims.play('enemy-walk', true)
+        }, enemyStats.spawnRate)
 
+
+    //DROP EXP
         //Drop exp node sprite
         var expText = document.getElementById('exp')
         expText.innerHTML = playerStats.experiece
 
-        // Shows Required EXP
+        //Shows Required EXP
         var nextLevelText = document.getElementById('nextlvl')
         nextLevelText.innerHTML = "Next Level at : " + playerStats.requiredExp
 
@@ -196,73 +266,73 @@
             }
         }
 
-        //WEAPONS
-            //Group cretion
-            fireball = this.physics.add.group()
-            spike = this.physics.add.group()
-            staff = this.physics.add.group()
 
-            setInterval(function(){
-                //Fireball
-                console.log()
-                if(
-                    playerStats.weapons.fireball.equiped === true && 
-                    Date.now() - playerStats.weapons.fireball.lastCastTime > playerStats.weapons.fireball.castSpeed
-                ){
-                    //Update cast time
-                    playerStats.weapons.fireball.lastCastTime = Date.now()
+    //WEAPONS
+        //Group cretion
+        fireball = this.physics.add.group()
+        spike = this.physics.add.group()
+        staff = this.physics.add.group()
 
-                    fireball.create(player.x, player.y,'fireball')
-                    
-                    fireball.children.entries.forEach(function (elem){                 
-                        elem.angle = 90
-                        elem.setVelocityY(-Math.abs(playerStats.weapons.fireball.projSpeed))
-                    })
-                }
+        setInterval(function(){
+            //Fireball
+            console.log()
+            if(
+                playerStats.weapons.fireball.equiped === true && 
+                Date.now() - playerStats.weapons.fireball.lastCastTime > playerStats.weapons.fireball.castSpeed
+            ){
+                //Update cast time
+                playerStats.weapons.fireball.lastCastTime = Date.now()
 
-                //Spike
-                if (
-                    playerStats.weapons.spike.equiped === true && 
-                    Date.now() - playerStats.weapons.spike.lastCastTime > playerStats.weapons.spike.castSpeed
-                ){
-                    //Update cast time
-                    playerStats.weapons.spike.lastCastTime = Date.now()
-
-                    //Drop spike
-                    spike.create(player.x + rNum(80), player.y + rNum(80), 'spike')
-                }
-
-                //Staff
-                if (
-                    playerStats.weapons.staff.equiped === true && 
-                    Date.now() - playerStats.weapons.staff.lastCastTime > playerStats.weapons.staff.castSpeed
-                ){
-
-                    //Update cast time
-                    playerStats.weapons.staff.lastCastTime = Date.now()
+                fireball.create(player.x, player.y,'fireball')
                 
-                    staff.create(player.x - 40, player.y, 'staff')
-                    player.setTexture('player-hit')
+                fireball.children.entries.forEach(function (elem){                 
+                    elem.angle = 90
+                    elem.setVelocityY(-Math.abs(playerStats.weapons.fireball.projSpeed))
+                })
+            }
 
-                    setTimeout(function(){
-                        staff.children.entries.forEach(function(elem){elem.destroy()})
-                        player.setTexture('player')
+            //Spike
+            if (
+                playerStats.weapons.spike.equiped === true && 
+                Date.now() - playerStats.weapons.spike.lastCastTime > playerStats.weapons.spike.castSpeed
+            ){
+                //Update cast time
+                playerStats.weapons.spike.lastCastTime = Date.now()
 
-                    }, 200)
-                }
-            }, 200);//repeat attack
+                //Drop spike
+                spike.create(player.x + rNum(80), player.y + rNum(80), 'spike')
+            }
+
+            //Staff
+            if (
+                playerStats.weapons.staff.equiped === true && 
+                Date.now() - playerStats.weapons.staff.lastCastTime > playerStats.weapons.staff.castSpeed
+            ){
+
+                //Update cast time
+                playerStats.weapons.staff.lastCastTime = Date.now()
+            
+                staff.create(player.x - 40, player.y, 'staff')
+                player.setTexture('player-hit')
+
+                setTimeout(function(){
+                    staff.children.entries.forEach(function(elem){elem.destroy()})
+                    player.setTexture('player')
+
+                }, 200)
+            }
+        }, 200);//repeat attack
         
 
-        //Colliders
+    //COLLIDERS
         this.physics.add.overlap(player, enemy, dmgPlayer, null, this)  //Player vs enemy
         this.physics.add.overlap(fireball, enemy, dmgEnemy, null, this) //Fireball vs enemy
         this.physics.add.overlap(spike, enemy, dmgEnemy, null, this) //Spike vs enemy
         this.physics.add.overlap(staff, enemy, dmgEnemy, null, this) //Staff vs enemy
-
-
         this.physics.add.collider(enemy, enemy) //Enemy vs Enemy
 
-        //Points calculation function
+
+    //PLAYER POITS CALCULATION
         var timeText = document.getElementById('time')
         timeText.innerHTML = "0 point"
         setInterval(function(){
@@ -270,9 +340,6 @@
             playerStats.points++
             timeText.innerHTML = playerStats.points + " points"
         }, 1000);
-    
-        //Keyboard keys
-        cursors = this.input.keyboard.createCursorKeys()
     }
     
 //UPDATE
@@ -281,6 +348,7 @@
         //Player movement wihth keyboard
         if (cursors.left.isDown) {
             player.setVelocityX(-Math.abs(playerStats.speed))
+            player.anims.play('walk', true);
 
             //Turn drift
             if(player.body.velocity.y > 0){
@@ -292,6 +360,7 @@
         }
         else if (cursors.right.isDown) {
             player.setVelocityX(playerStats.speed)
+            player.anims.play('walk', true);
 
             //Turn drift
             if(player.body.velocity.y > 0){
@@ -303,6 +372,7 @@
         }
         else if (cursors.up.isDown) {
             player.setVelocityY(-Math.abs(playerStats.speed))
+            player.anims.play('walk', true);
 
             if(player.body.velocity.x > 0){
                 player.setVelocityX(player.body.velocity.x - 5)
@@ -313,6 +383,7 @@
         }
         else if (cursors.down.isDown) {
             player.setVelocityY(playerStats.speed)
+            player.anims.play('walk', true);
 
             if(player.body.velocity.x > 0){
                 player.setVelocityX(player.body.velocity.x - 5)
@@ -322,31 +393,43 @@
             }
         }
         else {
+            player.anims.play('player-idle', true);
             player.setVelocityX(0)
             player.setVelocityY(0)
         }
 
         //Enemy movement
         enemy.children.entries.forEach(function(element){
+            if(Date.now() - element.directionChange > enemyStats.walkDelay){
+                element.directionChange = Date.now()
 
-            if (player.x - 25 > element.x){
-                element.setVelocityX(enemyGroup.speed)
-            }
-            else if (player.x + 25 < element.x){
-                element.setVelocityX(-Math.abs(enemyGroup.speed))
-            }
-            else{
-                element.setVelocityX(0)
-            }
-
-            if (player.y - 25 > element.y){
-                element.setVelocityY(enemyGroup.speed)
-            }
-            else if (player.y + 25 < element.y){
-                element.setVelocityY(-Math.abs(enemyGroup.speed))
-            }
-            else {
-                element.setVelocityY(0)
+                if (rNum(100) < 10) {
+                    element.setVelocityY(0)
+                    element.setVelocityX(0)
+                } 
+                else {
+                    if (player.x - 25 > element.x || rNum(100) > 90){
+                        element.setVelocityX(enemyStats.speed + Math.round(playerStats.points / enemyStats.speedScaleFactor))
+                    }
+                    else if (player.x + 25 < element.x){
+                        element.setVelocityX(-Math.abs(enemyStats.speed) - Math.round(playerStats.points / enemyStats.speedScaleFactor))
+                    }
+                    
+                    else{
+                        element.setVelocityX(0)
+                    }
+        
+                    if (player.y - 25 > element.y|| rNum(100) < 10){
+                        element.setVelocityY(enemyStats.speed + Math.round(playerStats.points / enemyStats.speedScaleFactor))
+                    }
+                    else if (player.y + 25 < element.y | rNum(100) < 5){
+                        element.setVelocityY(-Math.abs(enemyStats.speed) - Math.round(playerStats.points / enemyStats.speedScaleFactor))
+                    }
+                    
+                    else {
+                        element.setVelocityY(0)  
+                    }
+                }
             }
         })
 
@@ -398,7 +481,6 @@
             setTimeout(function(){ player.tint = 0xffffff; }, 100);
     }
 
-    
     //ENEMY DAMAGE
     function dmgEnemy(projectile, enemy){
         var enemyHp = enemy.customHp
@@ -420,7 +502,8 @@
             //Enemy hit
             else{
                 enemy.customHp -= weaponDmg
-                enemy.setTexture('enemy-1-hit') //changes image when hit
+                // enemy.setTexture('enemy-1-hit') //changes image when hit
+                enemy.anims.play('enemy-hit-walk', true)
             }
 
             if(playerStats.weapons[projectile.texture.key].fadesOnHit === true){
@@ -448,19 +531,38 @@
     function giveReward(button){
 
         //Reard 1
-        if(button.getAttribute('data-type') === 'reward1'){
+        if(button.getAttribute('data-type') === 'life'){
             console.log(1)
             //Add life
-            playerStats.life += playerStats.level
+            playerStats.life += 10
+            lifeText.innerHTML = playerStats.life
+
         }
         // Reward 2
-        else if (button.getAttribute('data-type') === 'reward2'){
-            console.log(2)
+        else if (button.getAttribute('data-type') === 'speed'){
+            playerStats.speed += 10
+            console.log(playerStats.speed)
         }
         // Reward 2
-        else if (button.getAttribute('data-type') === 'reward3'){
-            console.log(3)
-        } 
+        else if (button.getAttribute('data-type') === 'fireballDamage'){
+            playerStats.weapons.fireball.damage += 5
+        }
+        else if (button.getAttribute('data-type') === 'fireballCastSpeed'){
+            playerStats.weapons.fireball.castSpeed = playerStats.weapons.fireball.castSpeed - 100
+            console.log(playerStats.weapons.fireball.castSpeed)
+        }
+        else if (button.getAttribute('data-type') === 'spike'){
+            playerStats.weapons.spike.equiped = true
+        }
+        else if (button.getAttribute('data-type') === 'fireballPenetration'){
+            playerStats.weapons.fireball.fadesOnHit = false
+        }
+        else if (button.getAttribute('data-type') === 'staff'){
+            playerStats.weapons.staff.equiped = true
+        }
+        else if (button.getAttribute('data-type') === 'staffDamage'){
+            playerStats.weapons.staff.damage += 5
+        }
         else {
             console.log('No reward found.')
         }
