@@ -26,13 +26,13 @@
         speed: 200,
         points: 0,
         experiece: 0,
-        requiredExp: 10,
+        requiredExp: 1,
         level: 1,
         weapons:{
             fireball: {
                 equiped: true,
                 direction: 'top', 
-                damage: 5,
+                damage: 11,
                 castSpeed: 2000,
                 projSpeed: 360,
                 dpsTimeout: 500, //how frequently projectile deals damage
@@ -59,6 +59,18 @@
                 lastCastTime: Date.now()
             },
         }
+    }
+
+    var rewards = {
+        reward1: {
+            description: 'Add life'
+        },
+        reward2: {
+            description: 'Add speed'
+        },
+        reward3: {
+            description: 'Add damage'
+        },
     }
 
     var enemyGroup = {
@@ -105,7 +117,7 @@
 
         this.anims.create({
             key: 'walk',
-            frames: this.anims.generateFrameNumbers('player-walk', { start: 0, end: 2 }),
+            frames: this.anims.generateFrameNumbers('player-walk', { start: 0, end: 1 }),
             frameRate: 2,
             repeat: -1
         });
@@ -137,7 +149,7 @@
             lastEnemy.customHp = Math.floor(Math.random() * 10)
             lastEnemy.customHp = 10
             lastEnemy.lastHitTime = Date.now()
-        }, 2000)
+        }, 100)
 
         //Drop exp node sprite
         var expText = document.getElementById('exp')
@@ -161,10 +173,24 @@
             // Checks if playerEXP meets Required EXP for level UP
             if(playerStats.experiece == playerStats.requiredExp)
             {
-                playerStats.requiredExp += playerStats.level * 10 *(playerStats.level + 1)
+                playerStats.requiredExp += Math.round(playerStats.requiredExp * 0.5)
                 playerStats.level++
-                nextLevelText.innerHTML = "Next Level at : " +playerStats.requiredExp
-                lvlText.innerHTML = "Level :" + playerStats.level
+
+                nextLevelText.innerHTML = "Next level at: " +playerStats.requiredExp
+                lvlText.innerHTML = "Level: " + playerStats.level
+
+                //Decide what rewards to add
+                var rewardKeys = Object.keys(rewards)
+                for(i=0; i < 3; i++){
+                    var rewardType = rNum(rewardKeys.length)
+                    var reward = rewards[rewardKeys[rewardType]]
+                    console.log(rewards[rewardKeys[rewardType]])
+
+                    var button = document.getElementById('button' + (1 + i))
+                    button.innerHTML = reward.description
+                    button.setAttribute('data-type', rewardKeys[rewardType])
+                }
+
                 scene.pause();// Pauses game
                 hide(); // pops up Modal
             }
@@ -416,4 +442,23 @@
 
     function resumeScene(){
         scene.resume();
+    }
+
+    //Decides what reward to give
+    function giveReward(button){
+
+        //Reard 1
+        if(button.getAttribute('data-type') === 'reward1'){
+            console.log(1)
+        }
+        // Reward 2
+        else if (button.getAttribute('data-type') === 'reward2'){
+            console.log(2)
+        }
+        // Reward 2
+        else if (button.getAttribute('data-type') === 'reward3'){
+            console.log(3)
+        }
+
+        resumeScene()
     }
