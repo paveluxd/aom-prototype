@@ -7,7 +7,7 @@
             default: 'arcade',
             arcade: {
                 gravity: { y: 0 },
-                debug: false,
+                debug: true,
             }
         },
         scene: {
@@ -49,7 +49,7 @@
                 lastCastTime: Date.now()
             },
             staff: {
-                equiped: false,
+                equiped: true,
                 direction: 'left', 
                 damage: 10,
                 castSpeed: 1500,
@@ -57,6 +57,17 @@
                 dpsTimeout: 500, //how frequently projectile deals damage
                 fadesOnHit: false, //projectiled destroyed on collision
                 lastCastTime: Date.now()
+            },
+            arcane: {
+                equiped: true,
+                direction: 'top', 
+                damage: 2,
+                castSpeed: 500,
+                projSpeed: 360,
+                dpsTimeout: 500, //how frequently projectile deals damage
+                fadesOnHit: false, //projectiled destroyed on collision
+                lastCastTime: Date.now(),
+                projectileQuant:1,
             },
         }
     }
@@ -67,7 +78,7 @@
         life: 5,
         lifeScaleFactor: 30, //Enemy will get 1 hp per 10 player points
         speed: 60,
-        speedScaleFactor: 0.5,
+        speedScaleFactor: 0.5, //Enemy will get 2 speed per 1 player point.
         walkDirectionCanged: Date.now(),
         walkDelay: 2000,
     }
@@ -97,6 +108,11 @@
         } 
     }
 
+    //Points
+    var timeText = document.getElementById('time')
+    timeText.innerHTML = "0 point"
+    var pointsTimeNow = Date.now()
+
 
 //PRELOAD
     function preload (){
@@ -123,6 +139,7 @@
         this.load.image('fireball', './img/fireball.png')
         this.load.image('spike', './img/spike.png')
         this.load.image('staff', './img/staff.png')
+        this.load.image('arcane', './img/arcane.png')
     }
 
 //CREATE
@@ -181,7 +198,7 @@
 
             if(value === 0){
                 enemy.create(
-                    -80,          //x
+                    -80,        //x
                     rNum(1200), //y
                     'enemy-1'
                 )
@@ -189,7 +206,7 @@
             else if (value === 1){
                 enemy.create(
                     720,        //x
-                    rNum(120), //y
+                    rNum(120),  //y
                     'enemy-1'
                 )
             }
@@ -210,11 +227,14 @@
 
             //Add custom properties to calculate dmg
             var lastEnemy = enemy.children.entries[enemy.children.entries.length - 1]
+
             //Set life
             lastEnemy.customHp = enemyStats.life + Math.round(playerStats.points / enemyStats.lifeScaleFactor)
+            
             //Last hit timer
-            lastEnemy.lastHitTime = Date.now()
+            lastEnemy.lastHitTime = Date.now() //Prevent projectiles from hitting multiple times
             lastEnemy.directionChange = Date.now()
+            
             //Run animation
             lastEnemy.anims.play('enemy-walk', true)
         }, enemyStats.spawnRate)
@@ -272,74 +292,15 @@
         fireball = this.physics.add.group()
         spike = this.physics.add.group()
         staff = this.physics.add.group()
-
-        setInterval(function(){
-            //Fireball
-            console.log()
-            if(
-                playerStats.weapons.fireball.equiped === true && 
-                Date.now() - playerStats.weapons.fireball.lastCastTime > playerStats.weapons.fireball.castSpeed
-            ){
-                //Update cast time
-                playerStats.weapons.fireball.lastCastTime = Date.now()
-
-                fireball.create(player.x, player.y,'fireball')
-                
-                fireball.children.entries.forEach(function (elem){                 
-                    elem.angle = 90
-                    elem.setVelocityY(-Math.abs(playerStats.weapons.fireball.projSpeed))
-                })
-            }
-
-            //Spike
-            if (
-                playerStats.weapons.spike.equiped === true && 
-                Date.now() - playerStats.weapons.spike.lastCastTime > playerStats.weapons.spike.castSpeed
-            ){
-                //Update cast time
-                playerStats.weapons.spike.lastCastTime = Date.now()
-
-                //Drop spike
-                spike.create(player.x + rNum(80), player.y + rNum(80), 'spike')
-            }
-
-            //Staff
-            if (
-                playerStats.weapons.staff.equiped === true && 
-                Date.now() - playerStats.weapons.staff.lastCastTime > playerStats.weapons.staff.castSpeed
-            ){
-
-                //Update cast time
-                playerStats.weapons.staff.lastCastTime = Date.now()
-            
-                staff.create(player.x - 40, player.y, 'staff')
-                player.setTexture('player-hit')
-
-                setTimeout(function(){
-                    staff.children.entries.forEach(function(elem){elem.destroy()})
-                    player.setTexture('player')
-
-                }, 200)
-            }
-        }, 200);//repeat attack
+        arcane = this.physics.add.group()
         
-
     //COLLIDERS
         this.physics.add.overlap(player, enemy, dmgPlayer, null, this)  //Player vs enemy
         this.physics.add.overlap(fireball, enemy, dmgEnemy, null, this) //Fireball vs enemy
         this.physics.add.overlap(spike, enemy, dmgEnemy, null, this) //Spike vs enemy
         this.physics.add.overlap(staff, enemy, dmgEnemy, null, this) //Staff vs enemy
+        this.physics.add.overlap(arcane, enemy, dmgEnemy, null, this) //Staff vs enemy
         this.physics.add.collider(enemy, enemy) //Enemy vs Enemy
-
-
-    //PLAYER POITS CALCULATION
-        var timeText = document.getElementById('time')
-        timeText.innerHTML = "0 point"
-        setInterval(function(){
-            //Update timer
-            playerStats.points++
-            timeText.innerHTML = playerStats.points + " points"
-        }, 1000);
     }
     
 //UPDATE
@@ -438,7 +399,91 @@
             elem.x = player.x - 40
             elem.y = player.y
         })
+
+        //PLAYER POITS CALCULATION
+        if(Date.now() - pointsTimeNow > 1000){
+            //Update timer
+            playerStats.points++
+            timeText.innerHTML = playerStats.points + " points"
+            pointsTimeNow = Date.now()
+        }
+
+        //Weapons
+        //Fireball
+        if(
+            playerStats.weapons.fireball.equiped === true && 
+            Date.now() - playerStats.weapons.fireball.lastCastTime > playerStats.weapons.fireball.castSpeed
+        ){
+            //Update cast time
+            playerStats.weapons.fireball.lastCastTime = Date.now()
+
+            //Deletes fireballs at the edge of the screen
+            fireball.children.entries.forEach(function (elem){
+                if(elem.y < 10){
+                    elem.destroy(true)
+                }    
+            })
+
+            fireball.create(player.x, player.y,'fireball')
+            
+            fireball.children.entries.forEach(function (elem){  
+                elem.angle = 90
+                elem.setVelocityY(-Math.abs(playerStats.weapons.fireball.projSpeed))
+                elem.setCollideWorldBounds(true)             
+            })
+
+        }
+
+        //Spike
+        if (
+            playerStats.weapons.spike.equiped === true && 
+            Date.now() - playerStats.weapons.spike.lastCastTime > playerStats.weapons.spike.castSpeed
+        ){
+            //Update cast time
+            playerStats.weapons.spike.lastCastTime = Date.now()
+
+            //Drop spike
+            spike.create(player.x + rNum(80), player.y + rNum(80), 'spike')
+        }
+
+        //Staff
+        if (
+            playerStats.weapons.staff.equiped === true && 
+            Date.now() - playerStats.weapons.staff.lastCastTime > playerStats.weapons.staff.castSpeed
+        ){
+
+            //Update cast time
+            playerStats.weapons.staff.lastCastTime = Date.now()
         
+            staff.create(player.x - 40, player.y, 'staff')
+            player.setTexture('player-hit')
+
+            setTimeout(function(){
+                staff.children.entries.forEach(function(elem){elem.destroy()})
+            }, 200)
+        }
+
+        //Arcane
+        if (
+            playerStats.weapons.arcane.equiped === true && 
+            Date.now() - playerStats.weapons.arcane.lastCastTime > playerStats.weapons.arcane.castSpeed
+        ){
+            var projVelocityY = -100
+            arcane.clear(true)
+
+            for (i = 0; i < playerStats.weapons.arcane.projectileQuant; i++){
+                arcane.create(player.x, player.y, 'arcane')
+            }
+
+            arcane.children.entries.forEach(function (elem){                 
+                elem.setVelocityX(playerStats.weapons.arcane.projSpeed)
+                elem.setVelocityY(projVelocityY)
+
+                projVelocityY += 100
+            })                
+
+            playerStats.weapons.arcane.lastCastTime = Date.now()
+        }
     }
 
 //GAME LOGIC
