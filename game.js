@@ -249,12 +249,13 @@
         var nextLevelText = document.getElementById('nextlvl')
         nextLevelText.innerHTML = "Next Level at : " + playerStats.requiredExp
 
-        // Shows Player Level
+        //Shows Player Level
         var lvlText = document.getElementById('level')
         lvlText.innerHTML = "Level :" + playerStats.level
 
         expNode = this.physics.add.group()
         this.physics.add.overlap(player, expNode, collectExp, null, this);
+        //Rewards
         function collectExp (player, expNode){
             playerStats.experiece += 1
             expText.innerHTML = playerStats.experiece
